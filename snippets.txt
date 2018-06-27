@@ -1,0 +1,221 @@
+*Krok 1
+ng g c feedback
+
+---app.component.html
+<app-feedback></app-feedback>
+
+---feedback.component.html
+<div>
+  <h5>Michał Jawulski - Angular 6. Co nowego?</h5>
+  <p>Podczas tej sesji dowiesz się jakie nowości czekają na nas w Angularze v6. Stworzymy przykładową aplikację pokazującą nowości
+    najpopularniejszego frameworka webowego 2017 r.</p>
+  <button>Green</button>
+  <button>Yellow</button>
+  <button>Red</button>
+</div>
+
+*Krok 2 - polaczenie z firebase
+
+---feedback.component.ts
+@Input() sessionId: string;
+
+  private sessionDoc: AngularFirestoreDocument<Session>;
+  session: Observable<Session>;
+  sessionObject: Session;
+
+  constructor(private afs: AngularFirestore) {}
+
+  ngOnInit() {
+    this.sessionDoc = this.afs.doc<Session>("sessions/" + this.sessionId);
+    this.session = this.sessionDoc.valueChanges();
+
+    this.session.subscribe(session => {
+      this.sessionObject = session;
+    });
+  }
+
+  vote(option: "green" | "yellow" | "red") {
+    const vote = {};
+    vote[option] = this.sessionObject[option] + 1;
+    this.sessionDoc.update(vote);
+  }
+
+---app.component.html
+<app-feedback sessionId="1JyLVOIy1EsFi7egQ4vg"></app-feedback>
+
+
+  ---session.model.ts
+export class Session {
+  name: string;
+  speaker: string;
+  speakerAvatar: string;
+  sessionAvatar: string;
+  sessionNote: string;
+  green: number;
+  yellow: number;
+  red: number;
+}
+
+---zainstaluj pakiety
+  npm install firebase@latest
+  npm install angularfire2@latest
+
+  import {
+  AngularFirestoreDocument,
+  AngularFirestore
+} from "angularfire2/firestore";
+
+---skonfiguruj
+---app.module.ts do sekcji imports
+AngularFireModule.initializeApp(environment.firebase),
+AngularFirestoreModule
+
+---environment.ts
+firebase: {
+    apiKey: "AIzaSyCnv_ITkMp-ERyA6lT_luOlHxp3Pa1HlYQ",
+    authDomain: "speaker-feedback.firebaseapp.com",
+    databaseURL: "https://speaker-feedback.firebaseio.com",
+    projectId: "speaker-feedback",
+    storageBucket: "speaker-feedback.appspot.com",
+    messagingSenderId: "1043149921841"
+  }
+
+
+---feedback.component.html
+  <div *ngIf="session">
+  <h4>{{ (session | async)?.name }}</h4>
+  <h5>{{ (session | async)?.speaker }}</h5>
+  <p>{{ (session | async)?.sessionNote }}</p>
+  <button (click)="vote('green')">Green</button>
+  <button (click)="vote('yellow')">Yellow</button>
+  <button (click)="vote('red')">Red</button>
+
+  <ul>
+    <li>Green: {{ (session | async)?.green }}</li>
+    <li>Yellow: {{ (session | async)?.yellow }}</li>
+    <li>Red: {{ (session | async)?.red }}</li>
+  </ul>
+</div>
+
+* add angular material
+ng add @angular/material@6.2.1
+
+---feedback.component.html
+<mat-card class="session-card" *ngIf="session">
+  <mat-card-header>
+    <div mat-card-avatar class="header-avatar" [ngStyle]="{ 'background-image': 'url(' + (session | async)?.speakerAvatar + ')'}"></div>
+    <mat-card-title>{{ (session | async)?.name }}</mat-card-title>
+    <mat-card-subtitle>{{ (session | async)?.speaker }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+
+    <p>{{(session | async)?.sessionNote}}</p>
+
+  </mat-card-content>
+  <mat-card-actions>
+    <button mat-raised-button (click)="vote('green')" class="green-color">Green: {{(session | async)?.green}}</button>
+    <button mat-raised-button (click)="vote('yellow')" class="yellow-color">Yellow: {{ (session | async)?.yellow}}</button>
+    <button mat-raised-button (click)="vote('red')" class="red-color">Red: {{ (session | async)?.red}}</button>
+  </mat-card-actions>
+</mat-card>
+
+
+---app.module.ts do sekcji import
+MatCardModule,
+MatButtonModule
+
+--feedback.component.css
+.session-card {
+  max-width: 400px;
+}
+
+.header-avatar {
+  background-size: cover;
+}
+
+button {
+  color: white;
+}
+.red-color {
+  background: #f44336;
+}
+
+.green-color {
+  background: #4caf50;
+}
+
+.yellow-color {
+  background: #ffeb3b;
+}
+
+
+*Angular elements
+ng add @angular/elements
+
+---tsconfig.json
+"target": "es2015",
+
+---feedback.component.ts
+#change sessionId to sid
+@Input() sid
+
+add encapsulation in
+@Component
+encapsulation: ViewEncapsulation.Native
+
+---app.module.ts
+#remove bootstrap and add entry components
+entryComponents: [FeedbackComponent]
+
+constructor(private injector: Injector) {}
+  ngDoBootstrap() {
+    const el = createCustomElement(FeedbackComponent, {
+      injector: this.injector
+    });
+    customElements.define("app-feedback", el);
+  }
+
+* Budowanie/deploy
+install
+npm install fs-extra concat
+
+new file in main
+merge-js-scripts.js
+const fs = require("fs-extra");
+const concat = require("concat");
+
+(async function build() {
+  const files = [
+    "./dist/speaker-feedback/runtime.js",
+    "./dist/speaker-feedback/polyfills.js",
+    "./dist/speaker-feedback/main.js",
+    "./dist/speaker-feedback/scripts.js"
+  ];
+
+  await fs.ensureDir("elements");
+
+  await concat(files, "elements/feedback.js");
+  console.info("Elements created successfully!");
+})();
+
+*add script do package.json
+"build:elements": "ng build --prod --output-hashing none && node merge-js-scripts.js"
+
+*copy firebase configuration from env to prod env
+
+* new file in elements (index.html)
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elements!</title>
+</head>
+
+<body>
+  <app-feedback sid="1JyLVOIy1EsFi7egQ4vg"></app-feedback>
+  <script type="text/javascript" src="feedback.js"></script>
+</body>
+
+</html>

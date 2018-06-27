@@ -1,0 +1,17 @@
+<mat-card class="session-card" *ngIf="session">
+  <mat-card-header>
+    <div mat-card-avatar class="header-avatar" [ngStyle]="{ 'background-image': 'url(' + (session | async)?.speakerAvatar + ')'}"></div>
+    <mat-card-title>{{ (session | async)?.name }}</mat-card-title>
+    <mat-card-subtitle>{{ (session | async)?.speaker }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+
+    <p>{{(session | async)?.sessionNote}}</p>
+
+  </mat-card-content>
+  <mat-card-actions>
+    <button mat-raised-button (click)="vote('green')" class="green-color">Green: {{(session | async)?.green}}</button>
+    <button mat-raised-button (click)="vote('yellow')" class="yellow-color">Yellow: {{ (session | async)?.yellow}}</button>
+    <button mat-raised-button (click)="vote('red')" class="red-color">Red: {{ (session | async)?.red}}</button>
+  </mat-card-actions>
+</mat-card>

@@ -1,0 +1,22 @@
+.session-card {
+  max-width: 400px;
+}
+
+.header-avatar {
+  background-size: cover;
+}
+
+button {
+  color: white;
+}
+.red-color {
+  background: #f44336;
+}
+
+.green-color {
+  background: #4caf50;
+}
+
+.yellow-color {
+  background: #ffeb3b;
+}
